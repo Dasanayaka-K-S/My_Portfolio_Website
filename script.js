@@ -267,77 +267,75 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 
 
 /* ════════════════════════════════════
-   8. CONTACT FORM VALIDATION
+   8. CONTACT FORM — EmailJS
+   Works on GitHub Pages (no PHP needed)
+   ─────────────────────────────────────
+   Setup (free, 200 emails/month):
+   1. Go to https://emailjs.com → Sign Up free
+   2. Add Email Service  → copy SERVICE_ID
+   3. Create Email Template → copy TEMPLATE_ID
+      Template variables to use:
+        {{from_name}}  {{reply_to}}
+        {{subject}}    {{message}}
+   4. Go to Account → copy PUBLIC_KEY
+   5. Replace the three placeholders below
 ════════════════════════════════════ */
 (function initContactForm() {
-  const form    = document.getElementById("contact-form");
-  const success = document.getElementById("form-success");
-  const errMsg  = document.getElementById("form-error");
+  const form      = document.getElementById("contact-form");
+  const success   = document.getElementById("form-success");
+  const errMsg    = document.getElementById("form-error");
+  const submitBtn = form ? form.querySelector('[type="submit"]') : null;
 
   if (!form) return;
+
+  /* ── EmailJS credentials — replace these 3 values ── */
+  const EMAILJS_SERVICE_ID  = "YOUR_SERVICE_ID";   // e.g. "service_abc123"
+  const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";  // e.g. "template_xyz456"
+  /* Public key is already set in index.html <head>     */
 
   form.addEventListener("submit", e => {
     e.preventDefault();
 
     const name    = form.querySelector("#f-name").value.trim();
     const email   = form.querySelector("#f-email").value.trim();
-    const subject = form.querySelector("#f-subject")?.value.trim() || "";
     const message = form.querySelector("#f-message").value.trim();
 
-    /* hide old messages */
-    if (success) success.classList.remove("show");
-    if (errMsg)  errMsg.classList.remove("show");
+    /* Hide previous messages */
+    success.classList.remove("show");
+    errMsg.classList.remove("show");
 
-    /* basic validation */
+    /* Validate */
     if (!name || !email || !message) {
-      if (errMsg) {
-        errMsg.textContent = "⚠️  Please fill in all required fields.";
-        errMsg.classList.add("show");
-      }
+      errMsg.textContent = "⚠️  Please fill in all required fields.";
+      errMsg.classList.add("show");
       return;
     }
 
     const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRx.test(email)) {
-      if (errMsg) {
-        errMsg.textContent = "⚠️  Please enter a valid email address.";
-        errMsg.classList.add("show");
-      }
+      errMsg.textContent = "⚠️  Please enter a valid email address.";
+      errMsg.classList.add("show");
       return;
     }
 
-    /* ── PHP submission via fetch ── */
-    const submitBtn = form.querySelector('[type="submit"]');
-    submitBtn.disabled    = true;
-    submitBtn.textContent = "Sending…";
+    /* Send via EmailJS */
+    submitBtn.disabled   = true;
+    submitBtn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> Sending…';
 
-    fetch("index.php", {
-      method:  "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ name, email, subject, message, action: "contact" })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.ok) {
-          form.reset();
-          if (success) success.classList.add("show");
-          setTimeout(() => success && success.classList.remove("show"), 6000);
-        } else {
-          if (errMsg) {
-            errMsg.textContent = "⚠️  " + (data.error || "Something went wrong.");
-            errMsg.classList.add("show");
-          }
-        }
-      })
-      .catch(() => {
-        /* fallback: show success anyway in static preview */
+    emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form)
+      .then(() => {
         form.reset();
-        if (success) success.classList.add("show");
-        setTimeout(() => success && success.classList.remove("show"), 6000);
+        success.classList.add("show");
+        setTimeout(() => success.classList.remove("show"), 6000);
+      })
+      .catch(err => {
+        console.error("EmailJS error:", err);
+        errMsg.textContent = "⚠️  Failed to send. Please email me directly at kolithasandeepa111@gmail.com";
+        errMsg.classList.add("show");
       })
       .finally(() => {
-        submitBtn.disabled    = false;
-        submitBtn.textContent = "Send Message";
+        submitBtn.disabled  = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
       });
   });
 })();
