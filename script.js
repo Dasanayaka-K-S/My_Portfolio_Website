@@ -235,7 +235,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
   const el = document.getElementById("typewriter");
   if (!el) return;
 
-  const roles  = ["Software Developer", "Web Developer", "IT Student", "Java Programmer"];
+  const roles  = ["Full Stack Developer","Backend Developer","React Developer","Software Engineering Undergraduate"];
   let rIdx     = 0;
   let cIdx     = 0;
   let deleting = false;
